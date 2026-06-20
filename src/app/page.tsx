@@ -57,7 +57,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <footer className="border-t border-ink/10 py-5 text-sm text-ink/45">本测试匿名，结果仅用于设计作品集前期调研。</footer>
+        <footer className="border-t border-ink/10 py-5 text-sm text-ink/45">本测试匿名，不收集姓名、手机号、微信号等身份信息。</footer>
       </div>
     </main>
   );

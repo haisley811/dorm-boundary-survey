@@ -57,7 +57,7 @@ function homeHtml() {
   return shell("你的宿舍边界", `
     <main class="page">
       <div class="home-shell">
-        <header class="topline"><div class="mark"><span></span>Dormitory Boundary Research</div><small>anonymous / 3 min</small></header>
+        <header class="topline"><div class="mark"><span></span>Dormitory Boundary Test</div><small>anonymous / 3 min</small></header>
         <section class="home-grid">
           <div>
             <div class="curtain-stack"><i></i><i></i><i></i></div>
@@ -73,7 +73,7 @@ function homeHtml() {
             <div class="waves"></div>
           </div>
         </section>
-        <footer>本测试匿名，结果仅用于设计作品集前期调研。</footer>
+        <footer>本测试匿名，不收集姓名、手机号、微信号等身份信息。</footer>
       </div>
     </main>
   `);
@@ -126,7 +126,7 @@ function adminHtml() {
     <main class="page admin-page">
       <section class="admin-card">
         <p class="eyebrow">ADMIN BOARD</p>
-        <h2>调研后台</h2>
+        <h2>数据后台</h2>
         <input type="password" value="" placeholder="ADMIN_PASSWORD" />
         <button class="primary">进入后台</button>
       </section>

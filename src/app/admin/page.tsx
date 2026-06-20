@@ -57,7 +57,7 @@ export default function AdminPage() {
       <main className="flex min-h-screen items-center justify-center px-5">
         <section className="w-full max-w-md border border-ink/15 bg-paperLight/80 p-7 shadow-soft backdrop-blur">
           <p className="text-xs uppercase tracking-[0.24em] text-steel">admin board</p>
-          <h1 className="mt-3 text-3xl font-semibold text-ink">调研后台</h1>
+          <h1 className="mt-3 text-3xl font-semibold text-ink">数据后台</h1>
           <input
             className="mt-8 min-h-12 w-full border border-ink/15 bg-white/45 px-4 outline-none transition focus:border-steel"
             type="password"
@@ -84,8 +84,8 @@ export default function AdminPage() {
       <div className="mx-auto max-w-7xl">
         <header className="mb-8 flex flex-col justify-between gap-4 border-b border-ink/10 pb-5 sm:flex-row sm:items-end">
           <div>
-            <p className="text-xs uppercase tracking-[0.24em] text-steel">research data</p>
-            <h1 className="mt-3 text-4xl font-semibold text-ink">宿舍边界样本板</h1>
+            <p className="text-xs uppercase tracking-[0.24em] text-steel">response data</p>
+            <h1 className="mt-3 text-4xl font-semibold text-ink">宿舍边界提交记录</h1>
           </div>
           <button type="button" className="min-h-11 border border-ink bg-ink px-5 text-sm text-paper transition hover:bg-steel" onClick={downloadCsv}>
             CSV 下载
