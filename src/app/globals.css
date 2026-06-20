@@ -1,0 +1,68 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+  background: #f4f4f1;
+  color: #1f1f1d;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-height: 100%;
+  background: #f4f4f1;
+}
+
+body {
+  min-height: 100%;
+  margin: 0;
+  background:
+    radial-gradient(circle at 1px 1px, rgba(31, 31, 29, 0.12) 1px, transparent 0) 0 0 / 22px 22px,
+    linear-gradient(90deg, rgba(31, 31, 29, 0.045) 1px, transparent 1px) 0 0 / 72px 72px,
+    linear-gradient(rgba(31, 31, 29, 0.035) 1px, transparent 1px) 0 0 / 72px 72px,
+    #f4f4f1;
+  color: #1f1f1d;
+  font-family: var(--font-sans);
+}
+
+button,
+input {
+  font: inherit;
+}
+
+::selection {
+  background: rgba(155, 92, 95, 0.25);
+}
+
+.research-board {
+  position: relative;
+  overflow: hidden;
+}
+
+.research-board::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(115deg, transparent 0 48%, rgba(111, 127, 143, 0.07) 48% 52%, transparent 52%),
+    repeating-linear-gradient(90deg, rgba(31, 31, 29, 0.035) 0 1px, transparent 1px 48px);
+  mask-image: linear-gradient(to bottom, black, transparent 78%);
+}
+
+.curtain-surface {
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.4), rgba(111, 127, 143, 0.08), rgba(255, 255, 255, 0.25)),
+    repeating-linear-gradient(90deg, rgba(31, 31, 29, 0.08) 0 1px, transparent 1px 18px);
+  backdrop-filter: blur(10px);
+}
+
+.wave-lines {
+  background:
+    repeating-linear-gradient(0deg, transparent 0 14px, rgba(31, 31, 29, 0.07) 14px 15px),
+    repeating-linear-gradient(90deg, transparent 0 38px, rgba(155, 92, 95, 0.08) 38px 39px);
+}
