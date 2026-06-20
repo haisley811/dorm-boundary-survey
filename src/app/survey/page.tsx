@@ -2,7 +2,7 @@
 
 import { AnimatePresence, motion } from "framer-motion";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { questions, type QuestionId } from "@/data/questions";
 import { calculateResult, type SurveyAnswers } from "@/lib/calculateResult";
 
@@ -21,14 +21,21 @@ export default function SurveyPage() {
   const isMultiple = question.type === "multiple";
   const isLastQuestion = current === questions.length - 1;
   const showActionBar = isMultiple || isLastQuestion;
-  const nextButtonLabel = current === questions.length - 1 ? (isSubmitting ? "正在生成画像..." : "提交并查看结果") : "下一题";
+  const nextButtonLabel = isLastQuestion ? (isSubmitting ? "正在生成画像..." : "提交并查看结果") : "下一题";
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }, [current]);
 
   function chooseSingle(id: QuestionId, option: string) {
     const nextAnswers = { ...answers, [id]: option };
     setAnswers(nextAnswers);
-    window.setTimeout(() => {
-      void goNext(nextAnswers);
-    }, 220);
+
+    if (!isLastQuestion) {
+      window.setTimeout(() => {
+        void goNext(nextAnswers);
+      }, 220);
+    }
   }
 
   function toggleMultiple(id: QuestionId, option: string) {
@@ -39,6 +46,11 @@ export default function SurveyPage() {
 
   function goNext(nextAnswers = answers) {
     setError("");
+
+    if (!selectedValues.length && nextAnswers === answers) {
+      setError("请先选择至少一个选项。");
+      return;
+    }
 
     if (current < questions.length - 1) {
       setCurrent((value) => value + 1);
@@ -57,20 +69,20 @@ export default function SurveyPage() {
     sessionStorage.setItem("dorm-boundary-result", JSON.stringify({ answers: finalAnswers, result }));
 
     fetch("/api/submit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ answers: finalAnswers, respondentId }),
-        keepalive: true
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ answers: finalAnswers, respondentId }),
+      keepalive: true
     }).catch(() => {
-      // 本地预览或 Supabase 未配置时，不阻塞用户查看结果。
+      // 本地预览或 Supabase 暂时失败时，不阻挡用户查看结果。
     });
 
     router.push("/result");
   }
 
   return (
-    <main className={`min-h-screen px-4 py-5 sm:px-8 ${showActionBar ? "pb-32" : ""}`}>
-      <div className="mx-auto flex min-h-[calc(100vh-40px)] max-w-3xl flex-col">
+    <main className={`min-h-dvh overflow-y-auto px-4 py-5 sm:px-8 ${showActionBar ? "pb-[calc(9rem+env(safe-area-inset-bottom))]" : "pb-10"}`}>
+      <div className="mx-auto flex min-h-[calc(100dvh-40px)] max-w-3xl flex-col">
         <header className="border-b border-ink/10 pb-5">
           <div className="mb-4 flex items-center justify-between text-sm text-ink/50">
             <span>
@@ -90,7 +102,7 @@ export default function SurveyPage() {
           </div>
         </header>
 
-        <section className="flex flex-1 flex-col justify-start py-8">
+        <section className="flex flex-1 flex-col justify-start py-7 sm:py-8">
           <AnimatePresence mode="wait">
             <motion.div
               key={question.id}
@@ -100,39 +112,19 @@ export default function SurveyPage() {
               transition={{ duration: 0.28 }}
             >
               <p className="mb-3 text-xs uppercase tracking-[0.24em] text-steel">{isMultiple ? "multiple choice" : "single choice"}</p>
-              <h1 className="text-2xl font-semibold leading-10 text-ink sm:text-4xl sm:leading-[1.25]">{question.title}</h1>
+              <h1 className="text-2xl font-semibold leading-9 text-ink sm:text-4xl sm:leading-[1.25]">{question.title}</h1>
 
               {isMultiple && (
-                <div className="mt-6 flex flex-col gap-3 border border-ink/15 bg-paperLight/85 p-4 shadow-soft backdrop-blur sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.22em] text-steel">selected</p>
-                    <p className="mt-1 text-sm text-ink/60">已选择 {selectedValues.length} 项，多选后点击按钮进入下一题</p>
-                  </div>
-                  <button
-                    type="button"
-                    disabled={!canContinue || isSubmitting}
-                    onClick={() => void goNext()}
-                    className="min-h-12 min-w-36 border border-ink bg-ink px-6 text-sm font-medium text-paper transition hover:bg-steel disabled:cursor-not-allowed disabled:border-ink/20 disabled:bg-ink/20"
-                  >
-                    {nextButtonLabel}
-                  </button>
+                <div className="mt-6 border border-ink/15 bg-paperLight/85 p-4 shadow-soft backdrop-blur">
+                  <p className="text-xs uppercase tracking-[0.22em] text-steel">selected</p>
+                  <p className="mt-1 text-sm leading-6 text-ink/60">已选择 {selectedValues.length} 项。多选题可继续向下滑动查看全部选项，选完后点击底部按钮进入下一题。</p>
                 </div>
               )}
 
               {isLastQuestion && !isMultiple && (
-                <div className="mt-6 flex flex-col gap-3 border border-ink/15 bg-paperLight/85 p-4 shadow-soft backdrop-blur sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="text-xs uppercase tracking-[0.22em] text-steel">final step</p>
-                    <p className="mt-1 text-sm text-ink/60">选择一个答案后，点击按钮查看你的边界画像</p>
-                  </div>
-                  <button
-                    type="button"
-                    disabled={!canContinue || isSubmitting}
-                    onClick={() => void goNext()}
-                    className="min-h-12 min-w-40 border border-ink bg-ink px-6 text-sm font-medium text-paper transition hover:bg-steel disabled:cursor-not-allowed disabled:border-ink/20 disabled:bg-ink/20"
-                  >
-                    {nextButtonLabel}
-                  </button>
+                <div className="mt-6 border border-ink/15 bg-paperLight/85 p-4 shadow-soft backdrop-blur">
+                  <p className="text-xs uppercase tracking-[0.22em] text-steel">final step</p>
+                  <p className="mt-1 text-sm leading-6 text-ink/60">选择一个答案后，点击底部按钮查看你的边界画像。</p>
                 </div>
               )}
 
@@ -168,9 +160,11 @@ export default function SurveyPage() {
       </div>
 
       {showActionBar && (
-        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-ink/15 bg-paper/92 px-4 py-4 shadow-[0_-18px_50px_rgba(31,31,29,0.10)] backdrop-blur sm:px-8">
+        <div className="fixed inset-x-0 bottom-0 z-30 border-t border-ink/15 bg-paper/95 px-4 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shadow-[0_-18px_50px_rgba(31,31,29,0.10)] backdrop-blur sm:px-8">
           <div className="mx-auto flex max-w-3xl flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-ink/62">{isMultiple ? `已选择 ${selectedValues.length} 项` : selectedValues.length > 0 ? `已选择：${selectedValues[0]}` : "请选择一个答案"}</p>
+            <p className="text-sm leading-6 text-ink/62">
+              {isMultiple ? `已选择 ${selectedValues.length} 项` : selectedValues.length > 0 ? `已选择：${selectedValues[0]}` : "请选择一个答案"}
+            </p>
             <button
               type="button"
               disabled={!canContinue || isSubmitting}

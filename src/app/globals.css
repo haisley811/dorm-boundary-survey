@@ -40,7 +40,7 @@ input {
 
 .research-board {
   position: relative;
-  overflow: hidden;
+  overflow-x: hidden;
 }
 
 .research-board::before {
