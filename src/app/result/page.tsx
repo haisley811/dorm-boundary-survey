@@ -2,53 +2,76 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { BoundaryCard } from "@/components/BoundaryCard";
 import { RadarPortrait } from "@/components/RadarPortrait";
-import { resultTypes } from "@/data/resultTypes";
-import type { CalculatedResult } from "@/lib/calculateResult";
+import { resultTypes, type ResultTypeKey } from "@/data/resultTypes";
+import type { CalculatedResult, RadarScores } from "@/lib/calculateResult";
 
 type StoredResult = {
-  result: CalculatedResult;
+  result?: Partial<CalculatedResult> & {
+    resultType?: string;
+    radar?: Partial<RadarScores>;
+  };
+};
+
+const fallbackType = Object.keys(resultTypes)[0] as ResultTypeKey;
+const fallbackRadar: RadarScores = {
+  "视觉边界": 55,
+  "听觉边界": 55,
+  "时间边界": 55,
+  "规则边界": 55,
+  "心理恢复": 55
 };
 
 export default function ResultPage() {
   const [stored, setStored] = useState<StoredResult | null>(null);
+  const [hasLocalResult, setHasLocalResult] = useState(false);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    const raw = sessionStorage.getItem("dorm-boundary-result");
-    if (raw) {
-      setStored(JSON.parse(raw) as StoredResult);
+    try {
+      const raw = sessionStorage.getItem("dorm-boundary-result");
+      if (!raw) {
+        return;
+      }
+
+      const parsed = JSON.parse(raw) as StoredResult;
+      setStored(parsed);
+      setHasLocalResult(true);
+    } catch {
+      sessionStorage.removeItem("dorm-boundary-result");
     }
   }, []);
 
-  if (!stored) {
-    return (
-      <main className="flex min-h-screen items-center justify-center px-5">
-        <div className="max-w-md border border-ink/15 bg-paperLight/70 p-8 text-center shadow-soft">
-          <p className="text-lg text-ink">还没有可展示的边界画像。</p>
-          <Link className="mt-6 inline-flex min-h-11 items-center border border-ink bg-ink px-5 text-sm text-paper" href="/survey">
-            开始测试
-          </Link>
-        </div>
-      </main>
-    );
-  }
+  const resultType = useMemo(() => {
+    const storedType = stored?.result?.resultType;
+    return storedType && storedType in resultTypes ? (storedType as ResultTypeKey) : fallbackType;
+  }, [stored]);
 
-  const result = resultTypes[stored.result.resultType];
+  const result = resultTypes[resultType] ?? resultTypes[fallbackType];
+  const radar = { ...fallbackRadar, ...stored?.result?.radar };
   const shareText = `我的宿舍边界画像是：${result.title}。${result.subtitle}`;
 
   async function copyResult() {
-    await navigator.clipboard.writeText(shareText);
-    setCopied(true);
-    window.setTimeout(() => setCopied(false), 1600);
+    try {
+      await navigator.clipboard.writeText(shareText);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 1600);
+    } catch {
+      setCopied(false);
+    }
   }
 
   return (
     <main className="min-h-screen px-5 py-6 sm:px-8 lg:px-12">
       <div className="mx-auto max-w-6xl">
         <header className="border-b border-ink/10 pb-5 text-sm text-ink/45">result / boundary portrait</header>
+        {!hasLocalResult && (
+          <div className="mt-6 border border-mutedRed/30 bg-white/45 p-4 text-sm leading-7 text-mutedRed">
+            没有读取到刚刚的测试记录。你可以先查看示例画像，或返回重新测试一次。
+          </div>
+        )}
         <motion.section
           initial={{ opacity: 0, y: 18 }}
           animate={{ opacity: 1, y: 0 }}
@@ -78,7 +101,7 @@ export default function ResultPage() {
           </div>
           <div className="grid gap-5">
             <BoundaryCard result={result} />
-            <RadarPortrait radar={stored.result.radar} />
+            <RadarPortrait radar={radar} />
           </div>
         </motion.section>
       </div>

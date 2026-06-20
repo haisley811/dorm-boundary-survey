@@ -4,7 +4,7 @@ import { PolarAngleAxis, PolarGrid, Radar, RadarChart, ResponsiveContainer } fro
 import type { RadarScores } from "@/lib/calculateResult";
 
 export function RadarPortrait({ radar }: { radar: RadarScores }) {
-  const data = Object.entries(radar).map(([dimension, value]) => ({ dimension, value }));
+  const data = Object.entries(radar ?? {}).map(([dimension, value]) => ({ dimension, value }));
 
   return (
     <div className="h-72 border border-ink/15 bg-white/30 p-4">
