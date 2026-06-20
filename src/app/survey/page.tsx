@@ -4,7 +4,15 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { questions, type QuestionId } from "@/data/questions";
-import { calculateResult, type SurveyAnswers } from "@/lib/calculateResult";
+import { calculateResult, type CalculatedResult, type SurveyAnswers } from "@/lib/calculateResult";
+
+type SubmitResponse = {
+  result?: CalculatedResult;
+  saved?: boolean;
+  duplicate?: boolean;
+  warning?: string;
+  error?: string;
+};
 
 export default function SurveyPage() {
   const router = useRouter();
@@ -21,7 +29,7 @@ export default function SurveyPage() {
   const isMultiple = question.type === "multiple";
   const isLastQuestion = current === questions.length - 1;
   const showActionBar = isMultiple || isLastQuestion;
-  const nextButtonLabel = isLastQuestion ? (isSubmitting ? "正在生成画像..." : "提交并查看结果") : "下一题";
+  const nextButtonLabel = isLastQuestion ? (isSubmitting ? "正在保存..." : "提交并查看结果") : "下一题";
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -47,7 +55,10 @@ export default function SurveyPage() {
   function goNext(nextAnswers = answers) {
     setError("");
 
-    if (!selectedValues.length && nextAnswers === answers) {
+    const currentAnswer = nextAnswers[question.id];
+    const hasAnswer = Array.isArray(currentAnswer) ? currentAnswer.length > 0 : Boolean(currentAnswer);
+
+    if (!hasAnswer) {
       setError("请先选择至少一个选项。");
       return;
     }
@@ -57,27 +68,35 @@ export default function SurveyPage() {
       return;
     }
 
-    submit(nextAnswers);
+    void submit(nextAnswers);
   }
 
-  function submit(finalAnswers: SurveyAnswers) {
+  async function submit(finalAnswers: SurveyAnswers) {
     setIsSubmitting(true);
     setError("");
 
-    const result = calculateResult(finalAnswers);
+    const localResult = calculateResult(finalAnswers);
     const respondentId = getRespondentId();
-    sessionStorage.setItem("dorm-boundary-result", JSON.stringify({ answers: finalAnswers, result }));
 
-    fetch("/api/submit", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ answers: finalAnswers, respondentId }),
-      keepalive: true
-    }).catch(() => {
-      // 本地预览或 Supabase 暂时失败时，不阻挡用户查看结果。
-    });
+    try {
+      const response = await fetch("/api/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ answers: finalAnswers, respondentId })
+      });
+      const payload = (await response.json()) as SubmitResponse;
 
-    router.push("/result");
+      if (!response.ok || payload.error) {
+        throw new Error(payload.error || "数据保存失败，请稍后再试。");
+      }
+
+      const result = payload.result ?? localResult;
+      sessionStorage.setItem("dorm-boundary-result", JSON.stringify({ answers: finalAnswers, result, saved: payload.saved, duplicate: payload.duplicate }));
+      router.push("/result");
+    } catch (submitError) {
+      setError(submitError instanceof Error ? submitError.message : "数据保存失败，请稍后再试。");
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -124,7 +143,7 @@ export default function SurveyPage() {
               {isLastQuestion && !isMultiple && (
                 <div className="mt-6 border border-ink/15 bg-paperLight/85 p-4 shadow-soft backdrop-blur">
                   <p className="text-xs uppercase tracking-[0.22em] text-steel">final step</p>
-                  <p className="mt-1 text-sm leading-6 text-ink/60">选择一个答案后，点击底部按钮查看你的边界画像。</p>
+                  <p className="mt-1 text-sm leading-6 text-ink/60">选择一个答案后，点击底部按钮保存数据并查看你的边界画像。</p>
                 </div>
               )}
 
@@ -154,7 +173,7 @@ export default function SurveyPage() {
         </section>
 
         <footer className="border-t border-ink/10 py-5">
-          {question.type === "single" && isSubmitting && <p className="text-center text-sm text-ink/55">正在生成画像...</p>}
+          {question.type === "single" && isSubmitting && <p className="text-center text-sm text-ink/55">正在保存数据...</p>}
           {error && <p className="mt-3 text-center text-sm text-mutedRed">{error}</p>}
         </footer>
       </div>

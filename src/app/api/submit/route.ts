@@ -46,23 +46,18 @@ export async function POST(request: Request) {
     };
 
     if (!hasPublicSupabaseConfig) {
-      return NextResponse.json({ result, saved: false, warning: "Supabase 环境变量未配置，本地仅生成结果，未保存数据。" });
+      return NextResponse.json({ result, saved: false, error: "Supabase 环境变量未配置，数据没有保存。" }, { status: 500 });
     }
 
-    try {
-      const supabase = createServerSupabaseClient();
-      const { error } = await supabase.from("responses").insert(row);
+    const supabase = createServerSupabaseClient();
+    const { error } = await supabase.from("responses").insert(row);
 
-      if (error) {
-        if (error.code === "23505") {
-          return NextResponse.json({ result, saved: false, duplicate: true, warning: "该浏览器已经提交过一次，后台只保留首次数据。" });
-        }
-
-        return NextResponse.json({ result, saved: false, warning: error.message });
+    if (error) {
+      if (error.code === "23505") {
+        return NextResponse.json({ result, saved: false, duplicate: true, warning: "该浏览器已经提交过一次，后台只保留首次数据。" });
       }
-    } catch (saveError) {
-      const warning = saveError instanceof Error ? saveError.message : "Supabase 保存失败，本地仅生成结果。";
-      return NextResponse.json({ result, saved: false, warning });
+
+      return NextResponse.json({ result, saved: false, error: error.message }, { status: 500 });
     }
 
     return NextResponse.json({ result, saved: true });

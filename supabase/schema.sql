@@ -28,3 +28,19 @@ create table responses (
 
 grant usage on schema public to anon;
 grant insert, select on table responses to anon;
+
+alter table responses enable row level security;
+
+drop policy if exists responses_insert_anon on responses;
+create policy responses_insert_anon
+on responses
+for insert
+to anon
+with check (true);
+
+drop policy if exists responses_select_anon on responses;
+create policy responses_select_anon
+on responses
+for select
+to anon
+using (true);
